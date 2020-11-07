@@ -26,17 +26,52 @@ public class Process extends UntypedAbstractActor implements Serializable {
 	private final int id; //id of the process
 	private Members processes; //other processes' reference (arraylist)
 	private int localValue=0; //locally stored value, initially 0
-	private int localTS=0; //locally stored timestamp, initially 0
-	private int r;
-	private int t;
-	
-	public Process(int ID, int nb, int r, int t) {
-        N = nb;
-        id = ID;
-        r=0;
-        t=0;
+    private int localTS=0; //locally stored timestamp, initially 0
+    
+    private int state;
+    
+    //process constructor
+	public Process(int ID) {
+        this.id = ID; //process ID
+        this.state = 0; //default value
+        
     }
-	
+
+    //state : 1 - active, 2 - faulty, 3 - waiting
+    static public class State {
+        public final int state;
+        public State(int state) {
+            this.state = state;
+        }
+    }
+
+    
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	public int getSeqNbr() {
 		return this.r;
 	}
@@ -62,9 +97,12 @@ public class Process extends UntypedAbstractActor implements Serializable {
             processes = m;
             log.info("p" + self().path().name() + " received processes info");
         }
-		else if (message instanceof ReadRequestMsg) {
-            ReadRequestMsg m = (ReadRequestMsg) message;
-            getContext().sender().tell(, getContext().self());
+		else if (message instanceof State) {
+            this.state = ((State) message).state;
+            if(this.state == 2) { //means the state of the process is faulty
+                log.info("P"+this.id+" is faulty");
+            }
+            
         }
 		
 	}
