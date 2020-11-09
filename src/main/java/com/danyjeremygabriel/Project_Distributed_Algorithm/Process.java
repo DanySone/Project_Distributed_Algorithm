@@ -14,7 +14,8 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import java.util.HashMap;
+import java.util.Random;
 
 
 public class Process extends UntypedAbstractActor implements Serializable {
@@ -22,8 +23,11 @@ public class Process extends UntypedAbstractActor implements Serializable {
 	
 	private static final long serialVersionUID = -3904026307686534496L;
     private static final int M = 3;
-	private LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);// Logger attached to actor
+    private static volatile HashMap vh = new HashMap<Integer,Integer>();
+    private LoggingAdapter log = Logging.getLogger(getContext().getSystem(), this);// Logger attached to actor
     
+
+    private Random randomno = new Random();
     private int state; // process state
     private int localseqnbr; // local sequence number: the number of operations performed so far
     private StampedValue val; // response from the other processes (read and write requests)
@@ -34,6 +38,7 @@ public class Process extends UntypedAbstractActor implements Serializable {
 
     public volatile int test;
     private int id;
+	private Object put;
     
     // process constructor
     public Process(int id) {
@@ -121,24 +126,16 @@ public class Process extends UntypedAbstractActor implements Serializable {
         }
     }
 
+    public static void put(int key, int val) {
+        vh.put(key, val);
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    public int get(int key) {
+        if (vh.containsKey(key)) {
+            return (int) vh.get(key);
+        }
+        return -1;
+    }
 
     static public Props props(int id) {
         return Props.create(Process.class, () -> new Process(id));
@@ -157,7 +154,10 @@ public class Process extends UntypedAbstractActor implements Serializable {
                 if (this.role == 1) { //the process is the writer
                     log.info("P"+this.id+" is the writer");
                     this.localseqnbr++; //increments sequence number
-                    log.info("P"+this.id+": invokes operation "+(this.localseqnbr)+": put("+this.localseqnbr+")");
+                    int ik = randomno.nextInt(3);
+                    int iv = randomno.nextInt(50);
+                    log.info("P"+this.id+": invokes key "+ ik +" : put("+ iv +")");
+                    this.put(ik, iv);
                     this.msgs.clear();
                     for(int x = 0; x < this.mem.members.size(); x = x + 1) { // send the write request to all
                         this.mem.members.get(x).tell(new WriteRequest(new StampedValue(this.localseqnbr,this.localseqnbr,this.id),this.localseqnbr),getSelf()); 
@@ -167,7 +167,8 @@ public class Process extends UntypedAbstractActor implements Serializable {
                 else { // the process is the reader
                     log.info("P"+this.id+" is the reader");
                     this.localseqnbr++;
-                    log.info("P"+this.id+": invokes operation "+(this.localseqnbr)+":get()");
+                    int ik = randomno.nextInt(3);
+                    log.info("P"+this.id+": invokes key "+ ik +" : get()");
                     this.msgs.clear();
                     for(int x = 0; x < this.mem.members.size(); x = x + 1) { // get the current value/timestamp
                         this.mem.members.get(x).tell(new ReadRequest(localseqnbr),getSelf());
@@ -199,9 +200,11 @@ public class Process extends UntypedAbstractActor implements Serializable {
                             this.val = ((ReadResponse)msgs.get(x)).val;
                         }
                     }
+
                     //log.info("P"+this.id+": new (value,timestamp) = ["+this.val.value+",("+this.val.seqnbr+","+this.val.pid+")]");
                     this.state=1;	// not waiting any longer
-                    log.info("P"+this.id+": completes get operation "+this.localseqnbr+" with value "+this.val.value);
+                    int ik = randomno.nextInt(3);
+                    log.info("P"+this.id+": completes get with key = "+ ik +" with value "+ this.get(ik));
                     if ((this.localseqnbr)<M) {
                         getSelf().tell(new Role(2),ActorRef.noSender()); // invoke a new get operation
                     }
@@ -223,7 +226,6 @@ public class Process extends UntypedAbstractActor implements Serializable {
                     
                 }
 
-
             }
 
             else if (message instanceof WriteResponse && ((WriteResponse)message).localseqnbr==this.localseqnbr && this.state==3) {
@@ -231,8 +233,11 @@ public class Process extends UntypedAbstractActor implements Serializable {
                 if (msgs.size()>=this.mem.members.size()/2+1) {
                     this.state=1;
                     log.info("P"+this.id+": completes put operation "+this.localseqnbr);
-            
-            } else
+                    if ((this.localseqnbr)<M) {
+                        getSelf().tell(new Role(1),ActorRef.noSender()); // invoke a new put operation
+                    }
+            } 
+            else
             unhandled(message);
 
         }

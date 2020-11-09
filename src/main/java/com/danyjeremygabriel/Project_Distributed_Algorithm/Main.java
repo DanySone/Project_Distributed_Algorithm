@@ -9,7 +9,7 @@ import akka.actor.ActorSystem;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 //
-
+import java.util.Random;
 import java.util.ArrayList;
 
 import java.util.Collections;
@@ -18,8 +18,9 @@ public class Main
 {
     public static void main( String[] args )
     {
-        final int N = 100;  // The system size, we test for N = 3, N = 10 and N = 100
+        final int N = 10;  // The system size, we test for N = 3, N = 10 and N = 100
         final ActorSystem system = ActorSystem.create("system"); // create system
+        final Random randomnbr = new Random();
         Date now = new Date();
         ArrayList<ActorRef> members = new ArrayList<ActorRef>();
 
@@ -50,9 +51,11 @@ public class Main
              }
         
             //activate the writer and the reader
+            for (int x=0; x < 10; x++) {
+              members.get(randomnbr.nextInt(N-1)).tell(new Role(1), ActorRef.noSender());  //writer
+              members.get(randomnbr.nextInt(N-1)).tell(new Role(2), ActorRef.noSender());  //reader
+            }
             
-            members.get(0).tell(new Role(1), ActorRef.noSender());  //writer
-            members.get(1).tell(new Role(2), ActorRef.noSender());  //reader
         
             
           //#main-send-messages
