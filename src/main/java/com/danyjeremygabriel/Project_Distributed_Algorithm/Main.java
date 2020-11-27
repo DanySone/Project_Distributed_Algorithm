@@ -29,7 +29,6 @@ public class Main
         for(int x = 0; x <= N-1; x = x + 1) {
              members.add(system.actorOf(Process.props(x), "P"+Integer.toString(x)));
         }    
-        System.out.println("Members are : " + members);
     
            SimpleDateFormat dateFormatter = new SimpleDateFormat("E m/d/y h:m:s.SSS z");
            System.out.println("System birth: "+ dateFormatter.format(now));
@@ -51,7 +50,7 @@ public class Main
              }
         
             //activate the writer and the reader
-            for (int x=0; x < 10; x++) {
+            for (int x=0; x < (N/2)+10; x++) {
               members.get(randomnbr.nextInt(N-1)).tell(new Role(1), ActorRef.noSender());  //writer
               members.get(randomnbr.nextInt(N-1)).tell(new Role(2), ActorRef.noSender());  //reader
             }

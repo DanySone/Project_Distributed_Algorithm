@@ -134,6 +134,7 @@ public class Process extends UntypedAbstractActor implements Serializable {
         if (vh.containsKey(key)) {
             return (int) vh.get(key);
         }
+        
         return -1;
     }
 
@@ -168,7 +169,12 @@ public class Process extends UntypedAbstractActor implements Serializable {
                     log.info("P"+this.id+" is the reader");
                     this.localseqnbr++;
                     int ik = randomno.nextInt(3);
-                    log.info("P"+this.id+": invokes key "+ ik +" : get()");
+                    if (vh.get(ik) != null) {
+                        log.info("P"+this.id+": invokes key "+ ik +" : get() with value = "+ vh.get(ik));
+                    }
+                    else {
+                        log.info("P"+this.id+": invokes key "+ ik +" : get() with value = -1");
+                    }
                     this.msgs.clear();
                     for(int x = 0; x < this.mem.members.size(); x = x + 1) { // get the current value/timestamp
                         this.mem.members.get(x).tell(new ReadRequest(localseqnbr),getSelf());
